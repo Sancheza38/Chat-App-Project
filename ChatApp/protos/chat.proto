@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+//The chat service definition.
+service ChatService{
+    rpc join(User) returns (stream JoinResponse);
+    rpc sendMsg(ChatMessage) returns (Empty);
+    rpc receiveMsg(Empty) returns (stream ChatMessage);
+    rpc getAllUsers(Empty) returns (UserList);
+}
+
+message ChatMessage{
+    string fromUser = 1;
+    string msg = 2;
+    string time = 3;
+}
+
+message User{
+    string id = 1;
+    string name = 2;
+}
+
+message Empty{}
+
+message UserList{
+    repeated User users = 1;
+}
+
+message JoinResponse{
+    string msg = 1;
+}
+
+message ReceiveMsgRequest{
+    string user = 1;
+}

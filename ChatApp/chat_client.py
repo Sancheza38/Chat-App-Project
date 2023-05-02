@@ -53,17 +53,17 @@ def getClientStreamRequest(stub: any) -> object:
        #break out of loop
         if(gCommand == "!quit"):
             break
-
+            # "[" + curr_time + "] <" + username + ">", userMsg
         try:
             for message in stub.receiveMsg(chat_pb2.Empty()):
                 
                 if(message.time != oldMsgTime and (int(joinedTime) < int(message.time.replace(":", "")))):
                     if(message.fromUser == "joined" and (int(oldMsgTime.replace(":", "")) < int(message.time.replace(":", "")))):
-
-                        print(f"{message.msg} \n")
+                        print(f" [{message.time}] <{message.fromUser}> {message.msg}\n")
+                        # print(f"{message.msg} \n")
                         oldMsgTime = time.strftime("%H:%M:%S",time.localtime())
                     elif(message.fromUser != "joined"):
-                        print(f"{message.fromUser}\n {message.msg} {message.time} \n")
+                        print(f" [{message.time}] <{message.fromUser}> {message.msg}\n")
                         oldMsgTime = message.time     
         except grpc.RpcError as e:
                 #print(e)

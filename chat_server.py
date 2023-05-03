@@ -3,13 +3,15 @@ import chat_pb2_grpc
 import chat_pb2
 import grpc
 import time
-
+import chat_service
 
 #--------server()-----------
 class Server(chat_pb2_grpc.ChatServiceServicer):
     def __init__(self):
+        #chat history
         self.chats = []
 
+    # listens for messages sent to the server.
     def receiveMsg(self, request_iterator, context):
         lastindex = 0
         while True:
@@ -18,11 +20,12 @@ class Server(chat_pb2_grpc.ChatServiceServicer):
                 lastindex += 1
                 yield n
 
+
+    # when called sends message to server.
     def sendMsg(self, request: chat_pb2.ChatMessage, context):
         print("[{}] <{}> {}".format(request.time, request.fromUser, request.msg))
         self.chats.append(request)
         return chat_pb2.Empty()
-    
 
 #------main-------
 if __name__ == "__main__":

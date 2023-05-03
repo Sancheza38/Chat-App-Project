@@ -27,3 +27,5 @@ py chat_client.py
 ```
 
 Type in your desired username and press "OK". Then the chat application has been officially launched and is in use! You can launch multiple user clients by using the command above and have them communicate with each other.
+
+For the purposes of this project, we used a local network environment.

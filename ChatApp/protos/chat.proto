@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package grpc;
+
 //The chat service definition.
 service ChatService{
     rpc join(User) returns (stream JoinResponse);

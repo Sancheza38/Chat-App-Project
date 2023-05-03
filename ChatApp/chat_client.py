@@ -1,129 +1,75 @@
+import threading
+from tkinter import *
+from tkinter import simpledialog
+from tkinter import font
+from tkinter import ttk
+
+import grpc
+
 import chat_pb2_grpc
 import chat_pb2
 import time
-import grpc
+
 import sys
-import threading
 #--------global-------
-userName: str = ""
-gCommand : str = ""
-oldMsgTime : str = time.strftime("%H:%M:%S", time.localtime())
-joinedTime : str = ""
+address_port = 'localhost:5000'
 
-  
-# ----------getClientUser()-------
-'''
-    This will ask the user to enter a username for the server
+class Client:
 
-    Pre: stub type ChatServiceStub
+    def __init__(self, user: str, window):
+        #frame to put ui components on
+        self.window = window
+        self.username = user
+        #create a gRPC channel + stub
+        channel = grpc.insecure_channel(address_port)
+        self.conn = chat_pb2_grpc.ChatServiceStub(channel)
+        # create new listening thread for when new message streams come in
+        threading.Thread(target=self.__listen_for_messages, daemon=True).start()
+        self.__setup_ui()
+        self.window.mainloop()
 
-    Post: sends a join message to the server
-'''   
-def getClientUser(stub) -> object:
+    def __listen_for_messages(self):
+        """
+        Will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
+        when waiting for new messages
+        """
+        for note in self.conn.receiveMsg(chat_pb2.Empty()):  # this line will wait for new messages from the server!
+            print("R[{}] <{}> {}".format(note.time, note.fromUser, note.msg))  # debugging statement
+            self.chat_list.insert(END, "[{}] <{}> {}\n".format(note.time, note.fromUser, note.msg))  # add the message to the UI
 
-    name = input("Enter the name to use to join: ")
+    def send_message(self, event):
+        """
+        Called when user enters something into the textbox
+        """
+        message = self.entry_message.get()  # retrieve message from the UI
+        empty = ''
+        if message != empty:
+            n = chat_pb2.ChatMessage()  # create protobug message (called Note)
+            n.time = time.strftime("%H:%M:%S",time.localtime()) # set the time of message
+            n.fromUser = self.username  # set the username
+            n.msg = message  # set the actual message of the note
+            print("S[{}] <{}> {}".format(n.time, n.fromUser, n.msg))  # debugging statement
+            self.conn.sendMsg(n)  # send the Note to the server
+            self.entry_message.delete(0, END)
 
-    if name == "exit()":
-        sys.exit()
+    def __setup_ui(self):
+        self.chat_list = Text(background="black", foreground="white")
+        self.chat_list.grid(row=0, column=0, columnspan=5)
+        self.lbl_username = Label(text=self.username)
+        self.lbl_username.grid(row=1, column=0, columnspan=1, sticky=E)
+        self.entry_message = Entry(foreground="black", bd=5)
+        self.entry_message.bind('<Return>', self.send_message)
+        self.entry_message.focus()
+        self.entry_message.grid(row=1, column=1, columnspan=4, sticky=EW)
 
-    global userName, joinedTime
-    userName = name
-    idName = userName + "1"
-    joinedTime = time.strftime("%H%M%S", time.localtime())
-   
-    return stub.join(chat_pb2.User(id=idName, name = userName))
-
-
-
-
-#---------getClientStreamRequest()--------
-'''
-    This sends a empty messages to server to get an update on messages 
-    the is sending
-
-    Pre: stub stub type ChatServiceStub
-
-    Post: prints new messages
-'''
-def getClientStreamRequest(stub: any) -> object:
-   
-    global oldMsgTime
-    #getting messages
-    while True:
-       #break out of loop
-        if(gCommand == "!quit"):
-            break
-            # "[" + curr_time + "] <" + username + ">", userMsg
-        try:
-            for message in stub.receiveMsg(chat_pb2.Empty()):
-                
-                if(message.time != oldMsgTime and (int(joinedTime) < int(message.time.replace(":", "")))):
-                    if(message.fromUser == "joined" and (int(oldMsgTime.replace(":", "")) < int(message.time.replace(":", "")))):
-                        print(f" [{message.time}] <{message.fromUser}> {message.msg}\n")
-                        # print(f"{message.msg} \n")
-                        oldMsgTime = time.strftime("%H:%M:%S",time.localtime())
-                    elif(message.fromUser != "joined"):
-                        print(f" [{message.time}] <{message.fromUser}> {message.msg}\n")
-                        oldMsgTime = message.time     
-        except grpc.RpcError as e:
-                #print(e)
-                time.sleep(2)
-
-
-#-------sendClientMessage()--------
-'''
-    Send message to server to communicate with other clients
-
-    Pre: stub stub type ChatServiceStub
-
-    Post: no return / sends message to server
-'''
-def sendClientMessage(stub):
-    while True:
-        message = input("Enter your message:\n")
-        if(message == "!quit"):
-            global gCommand
-            gCommand = "!quit"
-            break
-
-        userTime = time.localtime()
-        currentUserTime = time.strftime("%H:%M:%S", userTime)
-        stub.sendMsg(chat_pb2.ChatMessage(fromUser = userName, msg = message, time = currentUserTime))
-
-
-
-
-#----------run()----------
-'''
-    Handles the locating the channel
-
-    Pre: none
-
-    Post: no return / connects to server
-'''
-def run():
-    with grpc.insecure_channel('localhost:5000') as channel:
-        stub = chat_pb2_grpc.ChatServiceStub(channel)
-        joinMessage = getClientUser(stub) #stud.join(chat_pb2.User(id="hello1", name ="Batman"))
-
-        """for message in joinMessage:
-            print(message.msg)"""
-
-        #thread started here
-        t1 = threading.Thread(target = getClientStreamRequest, args =(stub,))
-        t1.start()
-
-        t2 = threading.Thread(target = sendClientMessage, args=(stub,))
-        t2.start()
-
-        t1.join()
-        t2.join()
-
-
-
-#--------main-----------
-if __name__ == "__main__":
-    run()
-    
-
-
+if __name__ == '__main__':
+    root = Tk()
+    frame = Frame(root, width=300, height=300)
+    frame.grid()
+    root.withdraw()
+    username = None
+    while username is None:
+        # retrieve a username so we can distinguish all the different clients
+        username = simpledialog.askstring("Username", "What's your username?", parent=root)
+    root.deiconify()
+    c = Client(username, frame)  # this starts a client and thus a thread which keeps connection to server open

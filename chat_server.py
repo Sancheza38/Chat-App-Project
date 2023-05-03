@@ -3,17 +3,14 @@ import chat_pb2_grpc
 import chat_pb2
 import grpc
 import time
-import chat_service
 
 
 #--------server()-----------
-
 class Server(chat_pb2_grpc.ChatServiceServicer):
     def __init__(self):
         self.chats = []
 
     def receiveMsg(self, request_iterator, context):
-        
         lastindex = 0
         while True:
             while len(self.chats) > lastindex:

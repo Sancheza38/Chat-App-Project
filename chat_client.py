@@ -33,6 +33,7 @@ class Client:
         Will be ran in a separate thread as the main/ui thread, because the for-in call is blocking
         when waiting for new messages
         """
+
         self.joined = False
 
         if not self.joined:

@@ -80,7 +80,7 @@ class Client:
         self.entry_message = Entry(self.window, foreground="black", bd=5)
         self.entry_message.bind('<Return>', self.send_message)
         self.entry_message.focus()
-        self.entry_message.grid(row=1, column=1, columnspan=4, sticky=EW)
+        self.entry_message.grid(row=1, column=1, columnspan=5, sticky=EW)
 
 if __name__ == '__main__':
     root = Tk()

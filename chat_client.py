@@ -69,15 +69,15 @@ class Client:
     # Creates the GUI for the chatroom using tkinter toolkit.
     def __setup_ui(self):
         # creates the chat list where user messages are displayed
-        self.chat_list = Text(background="black", foreground="white")
+        self.chat_list = Text(self.window, background="black", foreground="white")
         self.chat_list.grid(row=0, column=0, columnspan=5)
 
         # creates the username label and sets it to the name of the current user.
-        self.lbl_username = Label(text=self.username)
+        self.lbl_username = Label(self.window, text=self.username)
         self.lbl_username.grid(row=1, column=0, columnspan=1, sticky=E)
 
         # creates the message textbox used by the user to enter a message.
-        self.entry_message = Entry(foreground="black", bd=5)
+        self.entry_message = Entry(self.window, foreground="black", bd=5)
         self.entry_message.bind('<Return>', self.send_message)
         self.entry_message.focus()
         self.entry_message.grid(row=1, column=1, columnspan=4, sticky=EW)
